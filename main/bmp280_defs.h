@@ -13,39 +13,6 @@
 #include <stddef.h>
 #endif
 
-/****************************************************************/
-/*! @name       Common macros               */
-/****************************************************************/
-#ifdef __KERNEL__
-#if !defined(UINT8_C) && !defined(INT8_C)
-#define INT8_C(x)    S8_C(x)
-#define UINT8_C(x)   U8_C(x)
-#endif
-
-#if !defined(UINT16_C) && !defined(INT16_C)
-#define INT16_C(x)   S16_C(x)
-#define UINT16_C(x)  U16_C(x)
-#endif
-
-#if !defined(INT32_C) && !defined(UINT32_C)
-#define INT32_C(x)   S32_C(x)
-#define UINT32_C(x)  U32_C(x)
-#endif
-
-#if !defined(INT64_C) && !defined(UINT64_C)
-#define INT64_C(x)   S64_C(x)
-#define UINT64_C(x)  U64_C(x)
-#endif
-#endif
-
-/*! @name C standard macros */
-#ifndef NULL
-#ifdef __cplusplus
-#define NULL         0
-#else
-#define NULL         ((void *) 0)
-#endif
-#endif
 
 /******************************************************************************/
 /*! @name        Compiler switch macros Definitions                */
@@ -324,11 +291,11 @@
 /*! @name           Function Pointers                             */
 /******************************************************************************/
 #ifndef BMP2_INTF_RET_TYPE
-#define BMP2_INTF_RET_TYPE                            int8_t
+#define BMP2_INTF_RET_TYPE                            esp_err_t
 #endif
 
 #ifndef BMP2_INTF_RET_SUCCESS
-#define BMP2_INTF_RET_SUCCESS                         INT8_C(0)
+#define BMP2_INTF_RET_SUCCESS                         esp_err_t
 #endif
 
 /*!
