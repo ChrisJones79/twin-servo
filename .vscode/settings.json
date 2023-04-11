@@ -3,5 +3,8 @@
   "idf.adapterTargetName": "esp32",
   "files.associations": {
     "*.tcc": "c"
-  }
+  },
+  "C_Cpp.codeAnalysis.clangTidy.checks.disabled": [
+    "clang-diagnostic-error"
+  ]
 }
