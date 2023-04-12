@@ -3,5 +3,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(COMPONENTS main mcpwm)
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(twin-servo)
