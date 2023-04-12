@@ -8,8 +8,8 @@ esp_err_t init_i2c(void)
 
     const i2c_config_t conf = {
         .mode = I2C_mode,
-        .sda_io_num = 14,
-        .scl_io_num = 13,
+        .sda_io_num = 46,
+        .scl_io_num = 9,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = I2C_FCLK,
@@ -24,6 +24,58 @@ esp_err_t init_i2c(void)
 
     return i2c_driver_install(I2C_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
+
+esp_err_t bmp2_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr){
+    
+    esp_err_t rslt = ESP_FAIL;
+    
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
+
+
+    i2c_master_write_byte(cmd, reg_addr, true);
+
+    i2c_master_read(cmd, reg_data, len, I2C_MASTER_LAST_NACK);
+
+    i2c_master_stop(cmd);
+
+    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(1000));
+
+    i2c_cmd_link_delete(cmd);
+    
+    return rslt;
+}
+
+esp_err_t bmp2_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr){
+    
+    esp_err_t rslt = ESP_FAIL;
+    
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
+
+    i2c_master_write_byte(cmd, reg_addr, true);
+
+    i2c_master_write(cmd, reg_data, len, true);
+
+    i2c_master_stop(cmd);
+
+    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(1000));
+
+    i2c_cmd_link_delete(cmd);
+    
+    return rslt;
+}
+
+void bmp2_delay_us(uint32_t period, void *intf_ptr){
+    vTaskDelay(period / portTICK_PERIOD_MS / 1000);
+}
+
 
 
 /********************** Static function declarations ************************/
@@ -50,7 +102,7 @@ static esp_err_t null_ptr_check(const struct bmp2_dev *dev);
  * @param[in] len        : Length of the reg_addr and reg_data arrays
  *
  */
-static esp_err_t interleave_data(const uint8_t *reg_addr, uint8_t *temp_buff, const uint8_t *reg_data, uint32_t len);
+static void interleave_data(const uint8_t *reg_addr, uint8_t *temp_buff, const uint8_t *reg_data, uint32_t len);
 
 /*!
  * @brief This API is used to read the calibration parameters used
@@ -253,9 +305,9 @@ esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struc
         dev->intf_rslt = dev->read(reg_addr, reg_data, len, dev->intf_ptr);
 
         /* Check for communication error and mask with an internal error code */
-        if (dev->intf_rslt != BMP2_INTF_RET_ESP_OK)
+        if (dev->intf_rslt != ESP_OK)
         {
-            rslt = BMP2_E_COM_FAIL;
+            rslt = ESP_FAIL;
         }
     }
     else
@@ -317,7 +369,7 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
             dev->intf_rslt = dev->write(reg_addr[0], temp_buff, temp_len, dev->intf_ptr);
 
             /* Check for communication error and mask with an internal error code */
-            if (dev->intf_rslt != BMP2_INTF_RET_ESP_OK)
+            if (dev->intf_rslt != ESP_OK)
             {
                 rslt = BMP2_E_COM_FAIL;
             }
