@@ -8,8 +8,8 @@ esp_err_t init_i2c(void)
 
     const i2c_config_t conf = {
         .mode = I2C_mode,
-        .sda_io_num = 46,
-        .scl_io_num = 9,
+        .sda_io_num = 14,
+        .scl_io_num = 13,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = I2C_FCLK,
