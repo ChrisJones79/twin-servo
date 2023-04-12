@@ -1,10 +1,7 @@
+build
+main/mcpwm_servo_control_example_main.c
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/settings.json
 .vscode/tasks.json
-build (folder)
-.vscode (folder)
-.vscode/c_cpp_properties.json
-.vscode/launch.json
-.vscode/settings.json
-.vscode/tasks.json
+sdkconfig.old
