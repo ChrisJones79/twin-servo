@@ -1,25 +1,62 @@
-#pragma once
+/**
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
+*
+* BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* 3. Neither the name of the copyright holder nor the names of its
+*    contributors may be used to endorse or promote products derived from
+*    this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+* @file       bmp2.h
+* @date       2021-05-21
+* @version    v1.0.1
+*
+*/
 
-#include "esp_err.h"
-#include "esp_log.h"
-#include "driver/i2c.h"
-#include "bmp280_defs.h"
+/*! @file bmp2.h
+ * @brief Sensor driver for BMP2 sensor
+ */
 
-#define I2C_FCLK                    100000
-#define I2C_NUM                     0
-#define I2C_MASTER_TX_BUF_DISABLE   0
-#define I2C_MASTER_RX_BUF_DISABLE   0
-#define I2C_TIMEOUT_MS              1000
+/*!
+ * @defgroup bmp2 BMP2
+ */
 
+#ifndef _BMP2_H
+#define _BMP2_H
 
-esp_err_t init_i2c(void);
+/*! CPP guard */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-esp_err_t bmp2_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
+/****************************************************************************/
 
-esp_err_t bmp2_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
-
-void bmp2_delay_us(uint32_t period, void *intf_ptr);
-
+/*!             Header files
+ ****************************************************************************/
+#include "bmp2_defs.h"
 
 /***************************************************************************/
 
@@ -36,7 +73,7 @@ void bmp2_delay_us(uint32_t period, void *intf_ptr);
  * \ingroup bmp2ApiInit
  * \page bmp2_api_bmp2_init bmp2_init
  * \code
- * esp_err_t bmp2_init(struct bmp2_dev *dev);
+ * int8_t bmp2_init(struct bmp2_dev *dev);
  * \endcode
  * @details This API is the entry point.
  *  It reads the chip-id and calibration data from the sensor.
@@ -45,10 +82,10 @@ void bmp2_delay_us(uint32_t period, void *intf_ptr);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_init(struct bmp2_dev *dev);
+int8_t bmp2_init(struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -60,7 +97,7 @@ esp_err_t bmp2_init(struct bmp2_dev *dev);
  * \ingroup bmp2ApiRegs
  * \page bmp2_api_bmp2_get_regs bmp2_get_regs
  * \code
- * esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
+ * int8_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
  * \endcode
  * @details This API reads the data from the given register address of the
  * sensor.
@@ -72,16 +109,16 @@ esp_err_t bmp2_init(struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
+int8_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
 
 /*!
  * \ingroup bmp2ApiRegs
  * \page bmp2_api_bmp2_set_regs bmp2_set_regs
  * \code
- * esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
+ * int8_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
  * \endcode
  * @details This API writes the given data to the register addresses
  * of the sensor.
@@ -94,10 +131,10 @@ esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struc
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
+int8_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -109,7 +146,7 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
  * \ingroup bmp2ApiSoftreset
  * \page bmp2_api_bmp2_soft_reset bmp2_soft_reset
  * \code
- * esp_err_t bmp2_soft_reset(struct bmp2_dev *dev);
+ * int8_t bmp2_soft_reset(struct bmp2_dev *dev);
  * \endcode
  * @details This API triggers the soft reset of the sensor.
  *
@@ -117,10 +154,10 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_soft_reset(struct bmp2_dev *dev);
+int8_t bmp2_soft_reset(struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -132,7 +169,7 @@ esp_err_t bmp2_soft_reset(struct bmp2_dev *dev);
  * \ingroup bmp2ApiPowermode
  * \page bmp2_api_bmp2_get_power_mode bmp2_get_power_mode
  * \code
- * esp_err_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev);
+ * int8_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev);
  * \endcode
  * @details This API reads the power mode.
  *
@@ -142,16 +179,16 @@ esp_err_t bmp2_soft_reset(struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev);
+int8_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev);
 
 /*!
  * \ingroup bmp2ApiPowermode
  * \page bmp2_api_bmp2_set_power_mode bmp2_set_power_mode
  * \code
- * esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
+ * int8_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
  * \endcode
  * @details This API writes the power mode.
  *
@@ -162,10 +199,10 @@ esp_err_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
+int8_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -177,7 +214,7 @@ esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, stru
  * \ingroup bmp2ApiConfig
  * \page bmp2_api_bmp2_get_config bmp2_get_config
  * \code
- * esp_err_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev);
+ * int8_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev);
  * \endcode
  * @details This API reads the data from the ctrl_meas register and config
  * register. It gives the currently set temperature and pressure over-sampling
@@ -201,16 +238,16 @@ esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, stru
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev);
+int8_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev);
 
 /*!
  * \ingroup bmp2ApiConfig
  * \page bmp2_api_bmp2_set_config bmp2_set_config
  * \code
- * esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
+ * int8_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
  * \endcode
  * @details This API writes the data to the ctrl_meas register and config register.
  * It sets the over-sampling mode, power mode configuration,
@@ -241,10 +278,10 @@ esp_err_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
+int8_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -256,7 +293,7 @@ esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
  * \ingroup bmp2ApiStatus
  * \page bmp2_api_bmp2_get_status bmp2_get_status
  * \code
- * esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
+ * int8_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
  * \endcode
  * @details This API reads the status register
  *
@@ -265,10 +302,10 @@ esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
+int8_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
 
 /**
  * \ingroup bmp2
@@ -280,7 +317,7 @@ esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
  * \ingroup bmp2ApiSensorData
  * \page bmp2_api_bmp2_get_sensor_data bmp2_get_sensor_data
  * \code
- * esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev);
+ * int8_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev);
  * \endcode
  * @details This API reads the pressure and temperature data from the
  * sensor, compensates the data and store it in the bmp2_data structure
@@ -291,16 +328,16 @@ esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev);
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  */
-esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev);
+int8_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev);
 
 /*!
  * \ingroup bmp2ApiSensorData
  * \page bmp2_api_bmp2_compensate_data bmp2_compensate_data
  * \code
- * esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
+ * int8_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
  *                               struct bmp2_data *comp_data,
  *                               struct bmp2_dev *dev);
  * \endcode
@@ -313,12 +350,12 @@ esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval > 0 -> Warning.
  * @retval < 0 -> Fail.
  *
  */
-esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
+int8_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
                             struct bmp2_data *comp_data,
                             struct bmp2_dev *dev);
 
@@ -332,7 +369,7 @@ esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
  * \ingroup bmp2ApiMeasTime
  * \page bmp2_api_bmp2_compute_meas_time bmp2_compute_meas_time
  * \code
- * esp_err_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev);
+ * int8_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev);
  * \endcode
  * @details This API computes the measurement time in microseconds for the
  * active configuration based on standbytime(conf->odr) and over-sampling mode(conf->os_mode)
@@ -343,8 +380,14 @@ esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
  *
  * @return Result of API execution status.
  *
- * @retval   0 -> ESP_OK.
+ * @retval   0 -> Success.
  * @retval < 0 -> Fail.
  *
  */
-esp_err_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev);
+int8_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev);
+
+#ifdef __cplusplus
+}
+#endif /* End of CPP guard */
+
+#endif /* _BMP2_H */

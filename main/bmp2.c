@@ -1,82 +1,46 @@
-#include "bmp280.h"
+/**
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
+*
+* BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* 3. Neither the name of the copyright holder nor the names of its
+*    contributors may be used to endorse or promote products derived from
+*    this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+* @file       bmp2.c
+* @date       2021-05-21
+* @version    v1.0.1
+*
+*/
 
-static const i2c_mode_t I2C_mode = I2C_MODE_MASTER;
-static const i2c_port_t I2C_port = I2C_NUM_0;
+/*! @file bmp2.c
+ * @brief Sensor driver for BMP2 sensor
+ */
 
-esp_err_t init_i2c(void)
-{
-
-    const i2c_config_t conf = {
-        .mode = I2C_mode,
-        .sda_io_num = 46,
-        .scl_io_num = 9,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = I2C_FCLK,
-    };
-
-    esp_err_t ret = i2c_param_config(I2C_port, &conf);
-
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE("I2C_params", "config failed: %s", esp_err_to_name(ret));
-    }
-
-    return i2c_driver_install(I2C_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-}
-
-esp_err_t bmp2_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr){
-    
-    esp_err_t rslt = ESP_FAIL;
-    
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-
-    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
-
-
-    i2c_master_write_byte(cmd, reg_addr, true);
-
-    i2c_master_read(cmd, reg_data, len, I2C_MASTER_LAST_NACK);
-
-    i2c_master_stop(cmd);
-
-    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(1000));
-
-    i2c_cmd_link_delete(cmd);
-    
-    return rslt;
-}
-
-esp_err_t bmp2_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr){
-    
-    esp_err_t rslt = ESP_FAIL;
-    
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-
-    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
-
-    i2c_master_write_byte(cmd, reg_addr, true);
-
-    i2c_master_write(cmd, reg_data, len, true);
-
-    i2c_master_stop(cmd);
-
-    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(1000));
-
-    i2c_cmd_link_delete(cmd);
-    
-    return rslt;
-}
-
-void bmp2_delay_us(uint32_t period, void *intf_ptr){
-    vTaskDelay(period / portTICK_PERIOD_MS / 1000);
-}
-
-
+#include "bmp2.h"
 
 /********************** Static function declarations ************************/
 
@@ -87,10 +51,10 @@ void bmp2_delay_us(uint32_t period, void *intf_ptr){
  * @param[in] dev : Structure instance of bmp2_dev.
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval <0 -> Fail
  */
-static esp_err_t null_ptr_check(const struct bmp2_dev *dev);
+static int8_t null_ptr_check(const struct bmp2_dev *dev);
 
 /*!
  * @brief This internal API interleaves the register addresses and respective
@@ -111,10 +75,10 @@ static void interleave_data(const uint8_t *reg_addr, uint8_t *temp_buff, const u
  * @param[in] dev : Structure instance of bmp2_dev
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval <0 -> Fail
  */
-static esp_err_t get_calib_param(struct bmp2_dev *dev);
+static int8_t get_calib_param(struct bmp2_dev *dev);
 
 /*!
  * @brief This internal API to reset the sensor, restore/set conf, restore/set mode
@@ -137,10 +101,10 @@ static esp_err_t get_calib_param(struct bmp2_dev *dev);
  * @param[in] dev  : Structure instance of bmp2_dev
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval <0 -> Fail
  */
-static esp_err_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
+static int8_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev);
 
 /*!
  *  @brief This API is used to set the over-sampling rate of temperature and pressure
@@ -160,10 +124,10 @@ static void set_os_mode(uint8_t *reg_data, const struct bmp2_config *conf);
  *  @param[out] uncomp_data : Contains the uncompensated pressure, temperature
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval <0 -> Fail
  */
-static esp_err_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_data *uncomp_data);
+static int8_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_data *uncomp_data);
 
 #ifdef BMP2_DOUBLE_COMPENSATION
 
@@ -176,11 +140,11 @@ static esp_err_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_d
  * @param[in] dev               : Structure instance of bmp2_dev.
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval >0 -> Warning
  * @retval <0 -> Fail
  */
-static esp_err_t compensate_temperature(double *comp_temperature,
+static int8_t compensate_temperature(double *comp_temperature,
                                      const struct bmp2_uncomp_data *uncomp_data,
                                      struct bmp2_dev *dev);
 
@@ -193,11 +157,11 @@ static esp_err_t compensate_temperature(double *comp_temperature,
  * @param[in] dev         : Structure instance of bmp2_dev.
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval >0 -> Warning
  * @retval <0 -> Fail
  */
-static esp_err_t compensate_pressure(double *comp_pressure,
+static int8_t compensate_pressure(double *comp_pressure,
                                   const struct bmp2_uncomp_data *uncomp_data,
                                   const struct bmp2_dev *dev);
 
@@ -212,11 +176,11 @@ static esp_err_t compensate_pressure(double *comp_pressure,
  * @param[in] dev               : Structure instance of bmp2_dev.
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval >0 -> Warning
  * @retval <0 -> Fail
  */
-static esp_err_t compensate_temperature(int32_t *comp_temperature,
+static int8_t compensate_temperature(int32_t *comp_temperature,
                                      const struct bmp2_uncomp_data *uncomp_data,
                                      struct bmp2_dev *dev);
 
@@ -229,11 +193,11 @@ static esp_err_t compensate_temperature(int32_t *comp_temperature,
  * @param[in] dev            : Structure instance of bmp2_dev.
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval >0 -> Warning
  * @retval <0 -> Fail
  */
-static esp_err_t compensate_pressure(uint32_t *comp_pressure,
+static int8_t compensate_pressure(uint32_t *comp_pressure,
                                   const struct bmp2_uncomp_data *uncomp_data,
                                   const struct bmp2_dev *dev);
 
@@ -246,10 +210,10 @@ static esp_err_t compensate_pressure(uint32_t *comp_pressure,
  * @param[in] upressure    : Uncompensated pressure
  *
  * @return Result of API execution status
- * @retval 0 -> ESP_OK
+ * @retval 0 -> Success
  * @retval <0 -> Fail
  */
-static esp_err_t st_check_boundaries(int32_t utemperature, int32_t upressure);
+static int8_t st_check_boundaries(int32_t utemperature, int32_t upressure);
 
 /****************** User Function Definitions *******************************/
 
@@ -257,18 +221,18 @@ static esp_err_t st_check_boundaries(int32_t utemperature, int32_t upressure);
  * @brief This API is the entry point.
  * It reads the chip-id and calibration data from the sensor.
  */
-esp_err_t bmp2_init(struct bmp2_dev *dev)
+int8_t bmp2_init(struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     rslt = null_ptr_check(dev);
 
-    if (rslt == ESP_OK)
+    if (rslt == BMP2_OK)
     {
         rslt = bmp2_get_regs(BMP2_REG_CHIP_ID, &dev->chip_id, 1, dev);
 
         /* Check for chip id validity */
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             if (dev->chip_id == BMP2_CHIP_ID)
             {
@@ -288,13 +252,13 @@ esp_err_t bmp2_init(struct bmp2_dev *dev)
  * @brief This API reads the data from the given register address of the
  * sensor.
  */
-esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev)
+int8_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     rslt = null_ptr_check(dev);
 
-    if ((rslt == ESP_OK) && (reg_data != NULL))
+    if ((rslt == BMP2_OK) && (reg_data != NULL))
     {
         /* Mask the register address' MSB if interface selected is SPI */
         if (dev->intf == BMP2_SPI_INTF)
@@ -305,9 +269,9 @@ esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struc
         dev->intf_rslt = dev->read(reg_addr, reg_data, len, dev->intf_ptr);
 
         /* Check for communication error and mask with an internal error code */
-        if (dev->intf_rslt != ESP_OK)
+        if (dev->intf_rslt != BMP2_INTF_RET_SUCCESS)
         {
-            rslt = ESP_FAIL;
+            rslt = BMP2_E_COM_FAIL;
         }
     }
     else
@@ -322,9 +286,9 @@ esp_err_t bmp2_get_regs(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, struc
  * @brief This API writes the given data to the register addresses
  * of the sensor.
  */
-esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev)
+int8_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp_buff[8]; /* Typically not to write more than 4 registers */
     uint32_t temp_len;
     uint8_t reg_addr_cnt;
@@ -336,7 +300,7 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
 
     rslt = null_ptr_check(dev);
 
-    if ((rslt == ESP_OK) && (reg_addr != NULL) && (reg_data != NULL))
+    if ((rslt == BMP2_OK) && (reg_addr != NULL) && (reg_data != NULL))
     {
         if (len > 0)
         {
@@ -369,7 +333,7 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
             dev->intf_rslt = dev->write(reg_addr[0], temp_buff, temp_len, dev->intf_ptr);
 
             /* Check for communication error and mask with an internal error code */
-            if (dev->intf_rslt != ESP_OK)
+            if (dev->intf_rslt != BMP2_INTF_RET_SUCCESS)
             {
                 rslt = BMP2_E_COM_FAIL;
             }
@@ -390,9 +354,9 @@ esp_err_t bmp2_set_regs(uint8_t *reg_addr, const uint8_t *reg_data, uint32_t len
 /*!
  * @brief This API triggers the soft-reset of the sensor.
  */
-esp_err_t bmp2_soft_reset(struct bmp2_dev *dev)
+int8_t bmp2_soft_reset(struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t reg_addr = BMP2_REG_SOFT_RESET;
     uint8_t soft_rst_cmd = BMP2_SOFT_RESET_CMD;
 
@@ -407,16 +371,16 @@ esp_err_t bmp2_soft_reset(struct bmp2_dev *dev)
  * configuration, power mode configuration, sleep duration and
  * IIR filter coefficient.
  */
-esp_err_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev)
+int8_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp[2] = { 0, 0 };
 
     if (conf != NULL)
     {
         rslt = bmp2_get_regs(BMP2_REG_CTRL_MEAS, temp, 2, dev);
 
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             conf->os_temp = BMP2_GET_BITS(temp[0], BMP2_OS_TEMP);
             conf->os_pres = BMP2_GET_BITS(temp[0], BMP2_OS_PRES);
@@ -438,7 +402,7 @@ esp_err_t bmp2_get_config(struct bmp2_config *conf, struct bmp2_dev *dev)
  * It sets the over-sampling mode, power mode configuration,
  * sleep duration and IIR filter coefficient.
  */
-esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev)
+int8_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev)
 {
     return conf_sensor(BMP2_POWERMODE_SLEEP, conf, dev);
 }
@@ -446,16 +410,16 @@ esp_err_t bmp2_set_config(const struct bmp2_config *conf, struct bmp2_dev *dev)
 /*!
  * @brief This API reads the status register
  */
-esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev)
+int8_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp;
 
     if (status != NULL)
     {
         rslt = bmp2_get_regs(BMP2_REG_STATUS, &temp, 1, dev);
 
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             status->measuring = BMP2_GET_BITS(temp, BMP2_STATUS_MEAS);
             status->im_update = BMP2_GET_BITS_POS_0(temp, BMP2_STATUS_IM_UPDATE);
@@ -472,9 +436,9 @@ esp_err_t bmp2_get_status(struct bmp2_status *status, struct bmp2_dev *dev)
 /*!
  * @brief This API reads the power mode.
  */
-esp_err_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev)
+int8_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp;
 
     if (mode != NULL)
@@ -495,9 +459,9 @@ esp_err_t bmp2_get_power_mode(uint8_t *mode, struct bmp2_dev *dev)
 /*!
  * @brief This API writes the power mode.
  */
-esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev)
+int8_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     rslt = conf_sensor(mode, conf, dev);
 
@@ -509,9 +473,9 @@ esp_err_t bmp2_set_power_mode(uint8_t mode, const struct bmp2_config *conf, stru
  * sensor, compensates the data and store it in the bmp2_data structure
  * instance passed by the user.
  */
-esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev)
+int8_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp[BMP2_P_T_LEN] = { 0 };
     struct bmp2_uncomp_data uncomp_data = { 0 };
 
@@ -519,12 +483,12 @@ esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev
     {
         rslt = bmp2_get_regs(BMP2_REG_PRES_MSB, temp, BMP2_P_T_LEN, dev);
 
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             /* Parse the read data from the sensor */
             rslt = parse_sensor_data(temp, &uncomp_data);
 
-            if (rslt == ESP_OK)
+            if (rslt == BMP2_OK)
             {
                 /* Compensate the pressure and/or temperature
                  * data from the sensor
@@ -545,15 +509,15 @@ esp_err_t bmp2_get_sensor_data(struct bmp2_data *comp_data, struct bmp2_dev *dev
  * @brief This API is used to compensate the pressure and
  * temperature data.
  */
-esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
+int8_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
                             struct bmp2_data *comp_data,
                             struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     rslt = null_ptr_check(dev);
 
-    if ((rslt == ESP_OK) && (uncomp_data != NULL) && (comp_data != NULL))
+    if ((rslt == BMP2_OK) && (uncomp_data != NULL) && (comp_data != NULL))
     {
         /* Initialize to zero */
         comp_data->temperature = 0;
@@ -561,7 +525,7 @@ esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
 
         rslt = compensate_temperature(&comp_data->temperature, uncomp_data, dev);
 
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             rslt = compensate_pressure(&comp_data->pressure, uncomp_data, dev);
         }
@@ -578,9 +542,9 @@ esp_err_t bmp2_compensate_data(const struct bmp2_uncomp_data *uncomp_data,
  * @brief This API computes the measurement time in microseconds for the
  * active configuration based on standbytime(conf->odr) and over-sampling mode(conf->os_mode)
  */
-esp_err_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev)
+int8_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_config *conf, const struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     /* Array contains measurement time in microseconds */
     uint32_t measurement_time[] = { 5500, 7500, 11500, 19500, 37500 };
@@ -588,7 +552,7 @@ esp_err_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_conf
 
     rslt = null_ptr_check(dev);
 
-    if ((rslt == ESP_OK) && (conf != NULL))
+    if ((rslt == BMP2_OK) && (conf != NULL))
     {
         if (dev->power_mode == BMP2_POWERMODE_NORMAL)
         {
@@ -615,9 +579,9 @@ esp_err_t bmp2_compute_meas_time(uint32_t *sampling_time, const struct bmp2_conf
  * @brief This internal API is used to check for null-pointers in the device
  * structure.
  */
-static esp_err_t null_ptr_check(const struct bmp2_dev *dev)
+static int8_t null_ptr_check(const struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     if ((dev == NULL) || (dev->read == NULL) || (dev->write == NULL) || (dev->delay_us == NULL))
     {
@@ -626,7 +590,7 @@ static esp_err_t null_ptr_check(const struct bmp2_dev *dev)
     }
     else
     {
-        rslt = ESP_OK;
+        rslt = BMP2_OK;
     }
 
     return rslt;
@@ -651,14 +615,14 @@ static void interleave_data(const uint8_t *reg_addr, uint8_t *temp_buff, const u
  * @brief This API is used to read the calibration parameters used
  * for calculating the compensated data.
  */
-static esp_err_t get_calib_param(struct bmp2_dev *dev)
+static int8_t get_calib_param(struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp[BMP2_CALIB_DATA_SIZE] = { 0 };
 
     rslt = bmp2_get_regs(BMP2_REG_DIG_T1_LSB, temp, BMP2_CALIB_DATA_SIZE, dev);
 
-    if (rslt == ESP_OK)
+    if (rslt == BMP2_OK)
     {
         dev->calib_param.dig_t1 = (uint16_t) (BMP2_MSBLSB_TO_U16(temp[BMP2_DIG_T1_MSB_POS], temp[BMP2_DIG_T1_LSB_POS]));
         dev->calib_param.dig_t2 = (int16_t) (BMP2_MSBLSB_TO_U16(temp[BMP2_DIG_T2_MSB_POS], temp[BMP2_DIG_T2_LSB_POS]));
@@ -681,9 +645,9 @@ static esp_err_t get_calib_param(struct bmp2_dev *dev)
 /*!
  * @brief This internal API to reset the sensor, restore/set conf, restore/set mode
  */
-static esp_err_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev)
+static int8_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struct bmp2_dev *dev)
 {
-    esp_err_t rslt;
+    int8_t rslt;
     uint8_t temp[2] = { 0, 0 };
     uint8_t reg_addr[2] = { BMP2_REG_CTRL_MEAS, BMP2_REG_CONFIG };
 
@@ -691,14 +655,14 @@ static esp_err_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struc
     {
         rslt = bmp2_get_regs(BMP2_REG_CTRL_MEAS, temp, 2, dev);
 
-        if (rslt == ESP_OK)
+        if (rslt == BMP2_OK)
         {
             /* Here the intention is to put the device to sleep
              * within the shortest period of time
              */
             rslt = bmp2_soft_reset(dev);
 
-            if (rslt == ESP_OK)
+            if (rslt == BMP2_OK)
             {
                 set_os_mode(temp, conf);
                 temp[1] = BMP2_SET_BITS(temp[1], BMP2_STANDBY_DURN, conf->odr);
@@ -707,7 +671,7 @@ static esp_err_t conf_sensor(uint8_t mode, const struct bmp2_config *conf, struc
 
                 rslt = bmp2_set_regs(reg_addr, temp, 2, dev);
 
-                if ((rslt == ESP_OK) && (mode != BMP2_POWERMODE_SLEEP))
+                if ((rslt == BMP2_OK) && (mode != BMP2_POWERMODE_SLEEP))
                 {
                     dev->power_mode = mode;
 
@@ -763,9 +727,9 @@ static void set_os_mode(uint8_t *reg_data, const struct bmp2_config *conf)
  *  @brief This internal API is used to parse the pressure and temperature
  *  data and store it in the bmp2_uncomp_data structure instance.
  */
-static esp_err_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_data *uncomp_data)
+static int8_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_data *uncomp_data)
 {
-    esp_err_t rslt;
+    int8_t rslt;
 
     /* Variables to store the sensor data */
     uint32_t data_xlsb;
@@ -795,11 +759,11 @@ static esp_err_t parse_sensor_data(const uint8_t *reg_data, struct bmp2_uncomp_d
  * @brief This internal API is used to get the compensated temperature from
  * uncompensated temperature. This API uses double floating precision.
  */
-static esp_err_t compensate_temperature(double *comp_temperature,
+static int8_t compensate_temperature(double *comp_temperature,
                                      const struct bmp2_uncomp_data *uncomp_data,
                                      struct bmp2_dev *dev)
 {
-    esp_err_t rslt = ESP_OK;
+    int8_t rslt = BMP2_OK;
     double var1, var2;
     double temperature;
 
@@ -834,11 +798,11 @@ static esp_err_t compensate_temperature(double *comp_temperature,
  * @brief This internal API is used to get the compensated pressure from
  * uncompensated pressure. This API uses double floating precision.
  */
-static esp_err_t compensate_pressure(double *comp_pressure,
+static int8_t compensate_pressure(double *comp_pressure,
                                   const struct bmp2_uncomp_data *uncomp_data,
                                   const struct bmp2_dev *dev)
 {
-    esp_err_t rslt = ESP_OK;
+    int8_t rslt = BMP2_OK;
     double var1, var2;
     double pressure = 0.0;
 
@@ -883,11 +847,11 @@ static esp_err_t compensate_pressure(double *comp_pressure,
  * @brief This internal API is used to get the compensated temperature from
  * uncompensated temperature. This API uses 32bit integer data type.
  */
-static esp_err_t compensate_temperature(int32_t *comp_temperature,
+static int8_t compensate_temperature(int32_t *comp_temperature,
                                      const struct bmp2_uncomp_data *uncomp_data,
                                      struct bmp2_dev *dev)
 {
-    esp_err_t rslt = ESP_OK;
+    int8_t rslt = BMP2_OK;
     int32_t var1, var2;
     int32_t temperature;
 
@@ -926,11 +890,11 @@ static esp_err_t compensate_temperature(int32_t *comp_temperature,
  * @brief This internal API is used to get the compensated pressure from
  * uncompensated pressure. This API uses 64bit integer data type.
  */
-static esp_err_t compensate_pressure(uint32_t *comp_pressure,
+static int8_t compensate_pressure(uint32_t *comp_pressure,
                                   const struct bmp2_uncomp_data *uncomp_data,
                                   const struct bmp2_dev *dev)
 {
-    esp_err_t rslt = ESP_OK;
+    int8_t rslt = BMP2_OK;
     int64_t var1, var2, p;
     uint32_t pressure = 0;
 
@@ -976,11 +940,11 @@ static esp_err_t compensate_pressure(uint32_t *comp_pressure,
  * @brief This internal API is used to get the compensated pressure from
  * uncompensated pressure. This API uses 32bit integer data type.
  */
-static esp_err_t compensate_pressure(uint32_t *comp_pressure,
+static int8_t compensate_pressure(uint32_t *comp_pressure,
                                   const struct bmp2_uncomp_data *uncomp_data,
                                   const struct bmp2_dev *dev)
 {
-    esp_err_t rslt = ESP_OK;
+    int8_t rslt = BMP2_OK;
     int32_t var1, var2;
     uint32_t pressure = 0;
 
@@ -1037,9 +1001,9 @@ static esp_err_t compensate_pressure(uint32_t *comp_pressure,
  * @This internal API checks whether the uncompensated temperature and
  * uncompensated pressure are within the range
  */
-static esp_err_t st_check_boundaries(int32_t utemperature, int32_t upressure)
+static int8_t st_check_boundaries(int32_t utemperature, int32_t upressure)
 {
-    esp_err_t rslt = 0;
+    int8_t rslt = 0;
 
     /* Check Uncompensated pressure in not valid range AND uncompensated temperature in valid range */
     if ((upressure < BMP2_ST_ADC_P_MIN || upressure > BMP2_ST_ADC_P_MAX) &&
@@ -1061,7 +1025,7 @@ static esp_err_t st_check_boundaries(int32_t utemperature, int32_t upressure)
     }
     else
     {
-        rslt = ESP_OK;
+        rslt = BMP2_OK;
     }
 
     return rslt;
