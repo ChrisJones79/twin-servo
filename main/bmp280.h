@@ -12,6 +12,15 @@
 #define I2C_TIMEOUT_MS              1000
 
 
+esp_err_t init_i2c(void);
+
+esp_err_t bmp2_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
+
+esp_err_t bmp2_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
+
+void bmp2_delay_us(uint32_t period, void *intf_ptr);
+
+
 /***************************************************************************/
 
 /*!     BMP2 User Interface function prototypes

@@ -1,6 +1,7 @@
 #ifndef _BMP280_DEFS_H
 #define _BMP280_DEFS_H
 
+#include "esp_err.h"
 
 /****************************************************************/
 /*! @name       Header includes             */
@@ -35,22 +36,22 @@
 
 /*! @name Return codes */
 /*! @name Success code*/
-#define BMP2_OK                                       INT8_C(0)
+#define BMP2_OK                                       (esp_err_t)(0)
 
 /*! @name Error codes */
-#define BMP2_E_NULL_PTR                               INT8_C(-1)
-#define BMP2_E_COM_FAIL                               INT8_C(-2)
-#define BMP2_E_INVALID_LEN                            INT8_C(-3)
-#define BMP2_E_DEV_NOT_FOUND                          INT8_C(-4)
-#define BMP2_E_UNCOMP_TEMP_RANGE                      INT8_C(-5)
-#define BMP2_E_UNCOMP_PRESS_RANGE                     INT8_C(-6)
-#define BMP2_E_UNCOMP_TEMP_AND_PRESS_RANGE            INT8_C(-7)
+#define BMP2_E_NULL_PTR                               (esp_err_t)(-1)
+#define BMP2_E_COM_FAIL                               (esp_err_t)(-2)
+#define BMP2_E_INVALID_LEN                            (esp_err_t)(-3)
+#define BMP2_E_DEV_NOT_FOUND                          (esp_err_t)(-4)
+#define BMP2_E_UNCOMP_TEMP_RANGE                      (esp_err_t)(-5)
+#define BMP2_E_UNCOMP_PRESS_RANGE                     (esp_err_t)(-6)
+#define BMP2_E_UNCOMP_TEMP_AND_PRESS_RANGE            (esp_err_t)(-7)
 
 /*! @name Warning codes */
-#define BMP2_W_MIN_TEMP                               INT8_C(1)
-#define BMP2_W_MAX_TEMP                               INT8_C(2)
-#define BMP2_W_MIN_PRES                               INT8_C(3)
-#define BMP2_W_MAX_PRES                               INT8_C(4)
+#define BMP2_W_MIN_TEMP                               (esp_err_t)(1)
+#define BMP2_W_MAX_TEMP                               (esp_err_t)(2)
+#define BMP2_W_MIN_PRES                               (esp_err_t)(3)
+#define BMP2_W_MAX_PRES                               (esp_err_t)(4)
 
 /*! @name Chip ID */
 #define BMP2_CHIP_ID                                  UINT8_C(0x58)
