@@ -1,7 +1,52 @@
-#ifndef _BMP280_DEFS_H
-#define _BMP280_DEFS_H
+/**
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
+*
+* BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* 3. Neither the name of the copyright holder nor the names of its
+*    contributors may be used to endorse or promote products derived from
+*    this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+* @file       bmp2_defs.h
+* @date       2021-05-21
+* @version    v1.0.1
+*
+*/
 
-#include "esp_err.h"
+/*! @file bmp2_defs.h
+ * @brief Sensor driver for BMP2 sensor
+ */
+
+#ifndef _BMP2_DEFS_H
+#define _BMP2_DEFS_H
+
+/*! CPP guard */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /****************************************************************/
 /*! @name       Header includes             */
@@ -14,6 +59,39 @@
 #include <stddef.h>
 #endif
 
+/****************************************************************/
+/*! @name       Common macros               */
+/****************************************************************/
+#ifdef __KERNEL__
+#if !defined(UINT8_C) && !defined(INT8_C)
+#define INT8_C(x)    S8_C(x)
+#define UINT8_C(x)   U8_C(x)
+#endif
+
+#if !defined(UINT16_C) && !defined(INT16_C)
+#define INT16_C(x)   S16_C(x)
+#define UINT16_C(x)  U16_C(x)
+#endif
+
+#if !defined(INT32_C) && !defined(UINT32_C)
+#define INT32_C(x)   S32_C(x)
+#define UINT32_C(x)  U32_C(x)
+#endif
+
+#if !defined(INT64_C) && !defined(UINT64_C)
+#define INT64_C(x)   S64_C(x)
+#define UINT64_C(x)  U64_C(x)
+#endif
+#endif
+
+/*! @name C standard macros */
+#ifndef NULL
+#ifdef __cplusplus
+#define NULL         0
+#else
+#define NULL         ((void *) 0)
+#endif
+#endif
 
 /******************************************************************************/
 /*! @name        Compiler switch macros Definitions                */
@@ -36,22 +114,22 @@
 
 /*! @name Return codes */
 /*! @name Success code*/
-#define BMP2_OK                                       (esp_err_t)(0)
+#define BMP2_OK                                       INT8_C(0)
 
 /*! @name Error codes */
-#define BMP2_E_NULL_PTR                               (esp_err_t)(-1)
-#define BMP2_E_COM_FAIL                               (esp_err_t)(-2)
-#define BMP2_E_INVALID_LEN                            (esp_err_t)(-3)
-#define BMP2_E_DEV_NOT_FOUND                          (esp_err_t)(-4)
-#define BMP2_E_UNCOMP_TEMP_RANGE                      (esp_err_t)(-5)
-#define BMP2_E_UNCOMP_PRESS_RANGE                     (esp_err_t)(-6)
-#define BMP2_E_UNCOMP_TEMP_AND_PRESS_RANGE            (esp_err_t)(-7)
+#define BMP2_E_NULL_PTR                               INT8_C(-1)
+#define BMP2_E_COM_FAIL                               INT8_C(-2)
+#define BMP2_E_INVALID_LEN                            INT8_C(-3)
+#define BMP2_E_DEV_NOT_FOUND                          INT8_C(-4)
+#define BMP2_E_UNCOMP_TEMP_RANGE                      INT8_C(-5)
+#define BMP2_E_UNCOMP_PRESS_RANGE                     INT8_C(-6)
+#define BMP2_E_UNCOMP_TEMP_AND_PRESS_RANGE            INT8_C(-7)
 
 /*! @name Warning codes */
-#define BMP2_W_MIN_TEMP                               (esp_err_t)(1)
-#define BMP2_W_MAX_TEMP                               (esp_err_t)(2)
-#define BMP2_W_MIN_PRES                               (esp_err_t)(3)
-#define BMP2_W_MAX_PRES                               (esp_err_t)(4)
+#define BMP2_W_MIN_TEMP                               INT8_C(1)
+#define BMP2_W_MAX_TEMP                               INT8_C(2)
+#define BMP2_W_MIN_PRES                               INT8_C(3)
+#define BMP2_W_MAX_PRES                               INT8_C(4)
 
 /*! @name Chip ID */
 #define BMP2_CHIP_ID                                  UINT8_C(0x58)
@@ -292,11 +370,11 @@
 /*! @name           Function Pointers                             */
 /******************************************************************************/
 #ifndef BMP2_INTF_RET_TYPE
-#define BMP2_INTF_RET_TYPE                            esp_err_t
+#define BMP2_INTF_RET_TYPE                            int8_t
 #endif
 
 #ifndef BMP2_INTF_RET_SUCCESS
-#define BMP2_INTF_RET_SUCCESS                         esp_err_t
+#define BMP2_INTF_RET_SUCCESS                         INT8_C(0)
 #endif
 
 /*!
@@ -516,5 +594,9 @@ struct bmp2_dev
     /*! Structure of calibration parameters' */
     struct bmp2_calib_param calib_param;
 };
+
+#ifdef __cplusplus
+}
+#endif /* End of CPP guard */
 
 #endif /* _BMP2_DEFS_H */
