@@ -1,46 +1,154 @@
-/**
-* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
-*
-* BSD-3-Clause
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* 1. Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-*
-* 2. Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in the
-*    documentation and/or other materials provided with the distribution.
-*
-* 3. Neither the name of the copyright holder nor the names of its
-*    contributors may be used to endorse or promote products derived from
-*    this software without specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
-* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*
-* @file       bmp2.c
-* @date       2021-05-21
-* @version    v1.0.1
-*
-*/
-
-/*! @file bmp2.c
- * @brief Sensor driver for BMP2 sensor
- */
-
 #include "bmp2.h"
+#include "esp_log.h"
+
+
+static const i2c_mode_t I2C_mode = I2C_MODE_MASTER;
+static const i2c_port_t I2C_port = I2C_NUM_0;
+static uint8_t dev_addr;
+
+esp_err_t init_i2c(void)
+{
+
+    const i2c_config_t conf = {
+        .mode = I2C_mode,
+        .sda_io_num = 46,
+        .scl_io_num = 9,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = I2C_FCLK,
+    };
+
+    esp_err_t ret = i2c_param_config(I2C_port, &conf);
+
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE("I2C_params", "config failed: %s", esp_err_to_name(ret));
+    }
+
+    return i2c_driver_install(I2C_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+}
+
+esp_err_t bmp2_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr){
+    
+    esp_err_t rslt = ESP_FAIL;
+    
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
+
+    i2c_master_write_byte(cmd, reg_addr, true);
+
+    i2c_master_read(cmd, reg_data, len, I2C_MASTER_LAST_NACK);
+
+    i2c_master_stop(cmd);
+
+    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(500));
+
+    i2c_cmd_link_delete(cmd);
+    
+    return rslt;
+}
+
+esp_err_t bmp2_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr){
+    
+    esp_err_t rslt = ESP_FAIL;
+    
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+    i2c_master_start(cmd);
+
+    i2c_master_write_byte(cmd, (BMP2_I2C_ADDR_PRIM << 1) | I2C_MASTER_WRITE, true);
+
+    i2c_master_write_byte(cmd, reg_addr, true);
+
+    i2c_master_write(cmd, reg_data, len, I2C_MASTER_LAST_NACK);
+
+    i2c_master_stop(cmd);
+
+    rslt = i2c_master_cmd_begin(I2C_port, cmd, pdMS_TO_TICKS(500));
+
+    i2c_cmd_link_delete(cmd);
+    
+    return rslt;
+}
+
+void bmp2_delay_us(uint32_t period, void *intf_ptr){
+    vTaskDelay(period / portTICK_PERIOD_MS / 1000);
+}
+
+/*!
+ *  @brief Prints the execution status of the APIs.
+ */
+void bmp2_error_codes_print_result(const char api_name[], int8_t rslt)
+{
+    if (rslt != BMP2_OK)
+    {
+        printf("%s\t", api_name);
+
+        switch (rslt)
+        {
+            case BMP2_E_NULL_PTR:
+                printf("Error [%d] : Null pointer error.", rslt);
+                printf(
+                    "It occurs when the user tries to assign value (not address) to a pointer, which has been initialized to NULL.\r\n");
+                break;
+            case BMP2_E_COM_FAIL:
+                printf("Error [%d] : Communication failure error.", rslt);
+                printf(
+                    "It occurs due to read/write operation failure and also due to power failure during communication\r\n");
+                break;
+            case BMP2_E_INVALID_LEN:
+                printf("Error [%d] : Invalid length error.", rslt);
+                printf("Occurs when length of data to be written is zero\n");
+                break;
+            case BMP2_E_DEV_NOT_FOUND:
+                printf("Error [%d] : Device not found error. It occurs when the device chip id is incorrectly read\r\n",
+                       rslt);
+                break;
+            case BMP2_E_UNCOMP_TEMP_RANGE:
+                printf("Error [%d] : Uncompensated temperature data not in valid range error.", rslt);
+                break;
+            case BMP2_E_UNCOMP_PRESS_RANGE:
+                printf("Error [%d] : Uncompensated pressure data not in valid range error.", rslt);
+                break;
+            case BMP2_E_UNCOMP_TEMP_AND_PRESS_RANGE:
+                printf(
+                    "Error [%d] : Uncompensated pressure data and uncompensated temperature data are not in valid range error.",
+                    rslt);
+                break;
+            default:
+                printf("Error [%d] : Unknown error code\r\n", rslt);
+                break;
+        }
+    }
+}
+
+int8_t bmp2_interface_selection(struct bmp2_dev *dev, uint8_t intf)
+{
+    int8_t rslt = BMP2_OK;
+
+    if (dev != NULL)
+    {
+        dev_addr = BMP2_I2C_ADDR_PRIM;
+        dev->read = bmp2_read;
+        dev->write = bmp2_write;
+        dev->intf = BMP2_I2C_INTF;
+
+        /* Holds the I2C device addr or SPI chip selection */
+        dev->intf_ptr = &dev_addr;
+
+        /* Configure delay in microseconds */
+        dev->delay_us = bmp2_delay_us;
+    }
+    else
+    {
+        rslt = BMP2_E_NULL_PTR;
+    }
+
+    return rslt;
+}
 
 /********************** Static function declarations ************************/
 
@@ -240,6 +348,7 @@ int8_t bmp2_init(struct bmp2_dev *dev)
             }
             else
             {
+                ESP_LOGE("bmp2_init", "Chip ID incorrect: %X should be %X", dev->chip_id, BMP2_CHIP_ID);
                 rslt = BMP2_E_DEV_NOT_FOUND;
             }
         }
